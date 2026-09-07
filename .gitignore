@@ -1,0 +1,10 @@
+# Ignore local logs and archives
+logs/
+*.log
+*.gz
+
+# Ignore Python virtual environments
+venv/
+.env
+__pycache__/
+.DS_Store
