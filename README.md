@@ -8,30 +8,40 @@ Unlike standard IT firewalls that operate exclusively at Layers 3 and 4, this so
 3. **`log_cleanup.sh`**: A defensive Bash management utility automating log file thresholds, compression, and persistent storage allocation.
 ---
 ## 📐 Pipeline Blueprint
-     [ Network Traffic ]
-             │
-             ▼
-     [ Scapy Sniffing Engine ] ──► (Port 502 Verification)
-             │
-             ▼
-    [ Layer 7 Payload Decode ] ──► Extracts Modbus Function Codes
-             │
-     ┌───────┴────────────────────────┐
-     ▼                                ▼
-[ Policy Check 1 ]               [ Policy Check 2 ]
-Is Source IP Trusted?            Is Command Read-Only?
- (e.g., 192.168.1.100)            (Blocks Write Codes 5, 6, 15, 16)
-     │                                │
-     ├────────────────────────────────┴───► [ ❌ POLICY CRITICAL VIOLATION ]
-     ▼                                                │
-[ ✅ ALLOWED PASSIVE TRAFFIC ]                        ▼
-                                      Writes to /logs/dpi_firewall_violations.log
-                                                      │
-                                   ┌──────────────────┴──────────────────┐
-                                   ▼                                     ▼
-                      [ parse_metrics.py Engine ]            [ log_cleanup.sh Cron ]
-                      Aggregates Blocks hourly              Rotates/Compresses if >10MB
 
+```text
+         [ Network Traffic Stream ]
+                    |
+                    v
+       [ Scapy L7 Sniffing Engine ] ----> (Filter: TCP Port 502)
+                    |
+                    v
+         [ Payload Decoded ] -----------> (Extract Modbus Function Code)
+                    |
+      +-------------+-------------+
+
+      |                           |
+      v                           v
+[ Security Policy 1 ]       [ Security Policy 2 ]
+Is Source IP Trusted?       Is Command Read-Only?
+ (e.g., 192.168.1.100)       (Blocks Codes 5, 6, 15, 16)
+
+      |                           |
+      +-------------+-------------+
+                    | (If Either Policy Check Fails)
+                    v
+     [ ❌ POLICY CRITICAL VIOLATION ]
+                    |
+                    v
+    [ Ingest Stream to Local Disk ] ----> /logs/dpi_firewall_violations.log
+                    |
+      +-------------+-------------+
+
+      |                           |
+      v                           v
+[ parse_metrics.py Engine ]   [ log_cleanup.sh Cron ]
+ Calculates Hourly Trends      Automates GZIP Compression (if >10MB)
+```
 ---
 ## 🛠️ Technical Features & Stack
 * **Language:** Python 3.13+
